@@ -25,7 +25,7 @@ const industries = [
         Icon: Magicpen,
         iconColor: "#2d68ff",
         bgColor: "bg-primary1/10",
-        questions: 30,
+        steps: 4,
     },
     {
         id: "design",
@@ -34,7 +34,7 @@ const industries = [
         Icon: Brush2,
         iconColor: "#a444f3",
         bgColor: "bg-accent2/10",
-        questions: 33,
+        steps: 4,
     },
     {
         id: "video",
@@ -43,7 +43,7 @@ const industries = [
         Icon: VideoPlay,
         iconColor: "#ff381c",
         bgColor: "bg-primary3/10",
-        questions: 39,
+        steps: 5,
     },
     {
         id: "content",
@@ -52,7 +52,7 @@ const industries = [
         Icon: Edit,
         iconColor: "#00a656",
         bgColor: "bg-primary2/10",
-        questions: 34,
+        steps: 4,
     },
     {
         id: "events",
@@ -61,7 +61,7 @@ const industries = [
         Icon: Calendar,
         iconColor: "#f52495",
         bgColor: "bg-accent/10",
-        questions: 41,
+        steps: 4,
     },
     {
         id: "consulting",
@@ -70,7 +70,7 @@ const industries = [
         Icon: Briefcase,
         iconColor: "#2d68ff",
         bgColor: "bg-primary1/10",
-        questions: 40,
+        steps: 4,
     },
     {
         id: "architecture",
@@ -79,7 +79,7 @@ const industries = [
         Icon: Building,
         iconColor: "#6366f1",
         bgColor: "bg-[#6366f1]/10",
-        questions: 60,
+        steps: 9,
     },
     {
         id: "pr",
@@ -88,7 +88,7 @@ const industries = [
         Icon: Microphone2,
         iconColor: "#f59e0b",
         bgColor: "bg-[#f59e0b]/10",
-        questions: 66,
+        steps: 12,
     },
     {
         id: "legal",
@@ -97,7 +97,7 @@ const industries = [
         Icon: Judge,
         iconColor: "#64748b",
         bgColor: "bg-[#64748b]/10",
-        questions: 71,
+        steps: 10,
     },
 ];
 
@@ -138,7 +138,7 @@ export default function NewBriefPage() {
                                     </p>
                                     <div className="flex items-center gap-2 text-small text-t-tertiary">
                                         <MessageQuestion size={14} color="#8E8E93" />
-                                        <span>{industry.questions} questions</span>
+                                        <span>{industry.steps} steps</span>
                                     </div>
                                 </div>
                             </div>

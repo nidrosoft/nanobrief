@@ -11,44 +11,51 @@ const plans = [
         name: "Free",
         price: "$0",
         period: "forever",
-        description: "Perfect for trying out NanoBrief",
+        description: "Get started with AI briefs",
         features: [
-            "5 briefs per month",
-            "6 industries",
-            "Basic templates",
-            "Email support",
+            "2 briefs per month",
+            "3 industries (Marketing, Design, Content)",
+            "Basic editing & sharing",
+            "Watermarked share links",
+            "Community support",
         ],
         current: true,
     },
     {
         id: "pro",
         name: "Pro",
-        price: "$19",
+        price: "$14.99",
+        yearlyPrice: "$12",
         period: "per month",
-        description: "For professionals and small teams",
+        description: "For professionals who create briefs regularly",
         features: [
             "Unlimited briefs",
-            "All industries",
-            "Advanced AI customization",
-            "Priority support",
-            "Export to PDF/Word",
-            "Team collaboration",
+            "All 9 industries + Custom",
+            "Section regeneration",
+            "PDF & Word export",
+            "Clean share links (no watermark)",
+            "Brief templates",
+            "Version history",
+            "Priority email support",
         ],
         popular: true,
     },
     {
-        id: "enterprise",
-        name: "Enterprise",
-        price: "Custom",
-        period: "contact us",
-        description: "For large organizations",
+        id: "team",
+        name: "Team",
+        price: "$39",
+        yearlyPrice: "$32",
+        period: "per month",
+        description: "For agencies and teams",
         features: [
             "Everything in Pro",
-            "Custom integrations",
-            "Dedicated account manager",
-            "SSO & advanced security",
-            "Custom AI training",
-            "SLA guarantee",
+            "Up to 5 team members",
+            "Shared workspace & library",
+            "Client portals",
+            "Custom branding on exports",
+            "Analytics dashboard",
+            "API access (1000 calls/mo)",
+            "Live chat support",
         ],
     },
 ];
@@ -97,10 +104,10 @@ export default function BillingPage() {
                             <div className="flex-1 h-2 bg-b-surface2 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary1 rounded-full transition-all"
-                                    style={{ width: "60%" }}
+                                    style={{ width: "50%" }}
                                 />
                             </div>
-                            <span className="text-body-bold">3/5</span>
+                            <span className="text-body-bold">1/2</span>
                         </div>
                     </div>
                     <div className="text-right">
@@ -161,11 +168,20 @@ export default function BillingPage() {
                                 {plan.description}
                             </p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-h2">{plan.price}</span>
+                                <span className="text-h2">
+                                    {billingCycle === "yearly" && plan.yearlyPrice 
+                                        ? plan.yearlyPrice 
+                                        : plan.price}
+                                </span>
                                 <span className="text-small text-t-tertiary">
                                     /{plan.period}
                                 </span>
                             </div>
+                            {billingCycle === "yearly" && plan.yearlyPrice && (
+                                <p className="text-small text-primary2 mt-1">
+                                    Billed annually
+                                </p>
+                            )}
                         </div>
                         <ul className="flex flex-col gap-3 mb-6">
                             {plan.features.map((feature) => (
@@ -181,10 +197,6 @@ export default function BillingPage() {
                         {plan.current ? (
                             <Button className="w-full" isStroke disabled>
                                 Current plan
-                            </Button>
-                        ) : plan.id === "enterprise" ? (
-                            <Button className="w-full" isStroke>
-                                Contact sales
                             </Button>
                         ) : (
                             <Button

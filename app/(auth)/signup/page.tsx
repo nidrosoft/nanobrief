@@ -6,29 +6,53 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import Field from "@/components/Field";
 import Image from "@/components/Image";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
     const router = useRouter();
+    const supabase = createClient();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
 
     const handleGoogleSignUp = () => {
-        setIsLoading(true);
-        // TODO: Implement Google OAuth with Supabase
-        setTimeout(() => {
-            router.push("/onboarding");
-        }, 1000);
+        // Google OAuth coming soon
+        alert("Google sign-up coming soon!");
     };
 
-    const handleEmailSignUp = (e: React.FormEvent) => {
+    const handleEmailSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // TODO: Implement email sign up with Supabase
-        setTimeout(() => {
-            router.push("/onboarding");
-        }, 1000);
+        setError("");
+
+        try {
+            const { data, error: signUpError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: name,
+                    },
+                    emailRedirectTo: undefined,
+                },
+            });
+
+            if (signUpError) {
+                setError(signUpError.message);
+                setIsLoading(false);
+                return;
+            }
+
+            if (data.user) {
+                router.push("/onboarding");
+                router.refresh();
+            }
+        } catch (err) {
+            setError("An unexpected error occurred. Please try again.");
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -40,12 +64,19 @@ export default function SignupPage() {
                 </p>
             </div>
 
-            {/* Google Sign Up */}
+            {/* Error Message */}
+            {error && (
+                <div className="mb-4 p-3 bg-primary3/10 border border-primary3/20 rounded-xl text-primary3 text-small">
+                    {error}
+                </div>
+            )}
+
+            {/* Google Sign Up - Coming Soon */}
             <Button
-                className="w-full mb-6"
+                className="w-full mb-6 opacity-60 cursor-not-allowed"
                 isPrimary
                 onClick={handleGoogleSignUp}
-                disabled={isLoading}
+                disabled={true}
             >
                 <Image
                     className="w-5 h-5 mr-2 opacity-100"
@@ -55,6 +86,7 @@ export default function SignupPage() {
                     alt="Google"
                 />
                 Continue with Google
+                <span className="ml-2 px-2 py-0.5 bg-white/20 text-xs rounded-full">Coming Soon</span>
             </Button>
 
             {/* Divider */}

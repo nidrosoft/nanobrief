@@ -16,14 +16,14 @@ export default function OnboardingLayout({
                 <Link href="/">
                     <Image
                         className="w-33.75 opacity-100 dark:hidden!"
-                        src="/images/logo-dark.svg"
+                        src="/images/logo-dark.png"
                         width={135}
                         height={36}
                         alt="NanoBrief"
                     />
                     <Image
                         className="hidden! w-33.75 opacity-100 dark:block!"
-                        src="/images/logo-light.svg"
+                        src="/images/logo-light.png"
                         width={135}
                         height={36}
                         alt="NanoBrief"

@@ -1,3 +1,5 @@
+"use client";
+
 import { usePathname } from "next/navigation";
 import Button from "@/components/Button";
 import Icon from "@/components/Icon";

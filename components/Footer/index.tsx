@@ -1,28 +1,69 @@
-import { usePathname } from "next/navigation";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import ContactModal from "@/components/ContactModal";
 
 const Footer = () => {
-    const pathname = usePathname();
+    const [isContactOpen, setIsContactOpen] = useState(false);
 
     return (
-        <div className={`${pathname === "/" ? "max-md:h-18" : ""}`}>
-            <div
-                className={`center flex justify-center items-center h-22 max-md:h-12 ${
-                    pathname === "/" ? "max-md:hidden" : ""
-                }`}
-            >
-                <div className="text-small text-t-tertiary">
-                    © 2024, Robot Global FZCO / UI8
+        <>
+            <footer className="border-t border-stroke-subtle">
+                <div className="center">
+                    <div className="flex items-center justify-between h-16 max-md:flex-col max-md:h-auto max-md:py-4 max-md:gap-3">
+                        {/* Left links */}
+                        <div className="flex items-center gap-6 max-md:gap-4">
+                            <Link
+                                href="/terms"
+                                className="text-small text-t-tertiary hover:text-t-primary transition-colors"
+                            >
+                                Terms of Service
+                            </Link>
+                            <Link
+                                href="/privacy"
+                                className="text-small text-t-tertiary hover:text-t-primary transition-colors"
+                            >
+                                Privacy Policy
+                            </Link>
+                        </div>
+
+                        {/* Center - Made with love */}
+                        <div className="text-small text-t-tertiary max-md:order-first">
+                            Made with ❤️ by{" "}
+                            <a
+                                href="https://www.linkedin.com/in/cyriac-zeh/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-t-secondary hover:text-t-primary transition-colors"
+                            >
+                                Cyriac
+                            </a>
+                        </div>
+
+                        {/* Right links */}
+                        <div className="flex items-center gap-6 max-md:gap-4">
+                            <Link
+                                href="/cookies"
+                                className="text-small text-t-tertiary hover:text-t-primary transition-colors"
+                            >
+                                Cookie Policy
+                            </Link>
+                            <button
+                                onClick={() => setIsContactOpen(true)}
+                                className="text-small text-t-tertiary hover:text-t-primary transition-colors"
+                            >
+                                Contact
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div className="w-0.25 h-1 mx-4 bg-t-tertiary max-md:mx-auto"></div>
-                <Link
-                    className="text-small text-t-secondary transition-colors hover:text-t-primary"
-                    href="/"
-                >
-                    Terms & Licensing
-                </Link>
-            </div>
-        </div>
+            </footer>
+            <ContactModal
+                open={isContactOpen}
+                onClose={() => setIsContactOpen(false)}
+            />
+        </>
     );
 };
 

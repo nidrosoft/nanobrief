@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import Field from "@/components/Field";
 import DatePicker from "@/components/DatePicker";
+import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft2, Magicpen, Brush2, VideoPlay, Edit, Calendar, Briefcase, Building, Microphone2, Judge, Setting4 } from "iconsax-react";
 
 const industryIcons: Record<string, typeof Magicpen> = {
@@ -732,11 +733,88 @@ export default function IndustryQuestionnairePage() {
         }
     };
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         setIsGenerating(true);
-        setTimeout(() => {
-            router.push(`/dashboard/new/${industryId}/generating`);
-        }, 500);
+        const supabase = createClient();
+
+        try {
+            // Get current user
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) {
+                console.error("Auth error:", userError);
+                alert("Please log in to create a brief");
+                router.push("/login");
+                return;
+            }
+
+            // Create brief record
+            const briefTitle = (answers["project_name"] as string) || 
+                               (answers["project_title"] as string) || 
+                               `${industry.name} Brief`;
+            
+            const clientName = (answers["client"] as string) || 
+                               (answers["company_info"] as string) || 
+                               "";
+
+            const { data: brief, error: briefError } = await supabase
+                .from("briefs")
+                .insert({
+                    user_id: user.id,
+                    title: briefTitle,
+                    industry_id: industryId,
+                    client_name: clientName,
+                    status: "generating",
+                    is_custom: false,
+                })
+                .select()
+                .single();
+
+            if (briefError || !brief) {
+                console.error("Error creating brief:", briefError);
+                alert("Failed to create brief: " + (briefError?.message || "Unknown error"));
+                setIsGenerating(false);
+                return;
+            }
+
+            // Save all answers
+            const answersToInsert = [];
+            for (const section of sections) {
+                for (const question of section.questions) {
+                    const answer = answers[question.id];
+                    if (answer !== undefined && answer !== "") {
+                        answersToInsert.push({
+                            brief_id: brief.id,
+                            question_id: question.id,
+                            question_text: question.question,
+                            answer_text: typeof answer === "string" ? answer : null,
+                            answer_array: Array.isArray(answer) ? answer : null,
+                            section_title: section.title,
+                        });
+                    }
+                }
+            }
+
+            if (answersToInsert.length > 0) {
+                const { error: answersError } = await supabase.from("brief_answers").insert(answersToInsert);
+                if (answersError) {
+                    console.error("Error saving answers:", answersError);
+                }
+            }
+
+            // Increment usage (don't block on this)
+            try {
+                await supabase.rpc("increment_brief_usage", { p_user_id: user.id });
+            } catch (e) {
+                console.error("Failed to increment usage:", e);
+            }
+
+            // Navigate to generating page with brief ID
+            router.push(`/dashboard/new/${industryId}/generating?briefId=${brief.id}`);
+        } catch (error: any) {
+            console.error("Error:", error);
+            alert("An error occurred: " + (error?.message || "Unknown error"));
+            setIsGenerating(false);
+        }
     };
 
     const toggleMultiSelect = (questionId: string, option: string) => {

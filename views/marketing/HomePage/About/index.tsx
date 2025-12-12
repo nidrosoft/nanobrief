@@ -23,11 +23,10 @@ const About = ({}) => {
             <div className="mb-20 text-center max-lg:mb-12 max-md:mb-10 max-md:text-left">
                 <div className="center">
                     <div className="mb-5 text-h1">
-                        AI-powered briefs in seconds
+                        Why choose NanoBrief?
                     </div>
                     <div className="text-body-lg text-t-secondary/80">
-                        Save hours of preparation time with intelligent brief
-                        generation
+                        The smarter way to create professional project briefs
                     </div>
                 </div>
             </div>

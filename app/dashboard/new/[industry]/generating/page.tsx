@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "@/components/Image";
-import { Magicpen, RefreshCircle } from "iconsax-react";
+import { Magicpen, RefreshCircle, Warning2 } from "iconsax-react";
+import { createClient } from "@/lib/supabase/client";
 
 const industryNames: Record<string, string> = {
     marketing: "Marketing & Advertising",
@@ -18,44 +19,107 @@ const industryNames: Record<string, string> = {
     custom: "Custom",
 };
 
+
 export default function GeneratingPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const industryId = params.industry as string;
-    const [countdown, setCountdown] = useState(5);
-    const [status, setStatus] = useState("Analyzing your responses...");
+    const briefId = searchParams.get("briefId");
+    const [progress, setProgress] = useState(0);
+    const [status, setStatus] = useState("Initializing AI...");
+    const [error, setError] = useState<string | null>(null);
+    const hasStarted = useRef(false);
 
     const statuses = [
+        "Initializing AI...",
         "Analyzing your responses...",
         "Understanding project requirements...",
+        "Generating content with Claude...",
         "Structuring your brief...",
         "Adding industry best practices...",
+        "Formatting sections...",
         "Finalizing your brief...",
     ];
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    setTimeout(() => {
-                        router.push("/dashboard/briefs/new-brief");
-                    }, 500);
-                    return 1;
+        if (hasStarted.current) return;
+        hasStarted.current = true;
+
+        const generateBrief = async () => {
+            if (!briefId) {
+                router.push("/dashboard/new");
+                return;
+            }
+
+            const supabase = createClient();
+
+            // Start progress animation
+            let currentProgress = 0;
+            const progressTimer = setInterval(() => {
+                currentProgress += Math.random() * 8 + 2;
+                if (currentProgress > 90) currentProgress = 90;
+                setProgress(currentProgress);
+                
+                // Update status based on progress
+                const statusIndex = Math.min(
+                    Math.floor((currentProgress / 100) * statuses.length),
+                    statuses.length - 1
+                );
+                setStatus(statuses[statusIndex]);
+            }, 800);
+
+            try {
+                // Get the session for auth
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    throw new Error("Not authenticated");
                 }
-                return prev - 1;
-            });
-        }, 1000);
 
-        return () => clearInterval(timer);
-    }, [router]);
+                // Call the Edge Function to generate the brief
+                const { data: result, error: invokeError } = await supabase.functions.invoke(
+                    "generate-brief",
+                    {
+                        body: { briefId },
+                    }
+                );
 
-    useEffect(() => {
-        const statusIndex = 5 - countdown;
-        if (statusIndex >= 0 && statusIndex < statuses.length) {
-            setStatus(statuses[statusIndex]);
-        }
-    }, [countdown]);
+                clearInterval(progressTimer);
+
+                if (invokeError) {
+                    throw new Error(invokeError.message || "Failed to generate brief");
+                }
+
+                console.log("Brief generated:", result?.metadata);
+
+                // Complete the progress
+                setProgress(100);
+                setStatus("Brief complete!");
+
+                // Short delay to show completion
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Navigate to the brief view
+                router.push(`/dashboard/briefs/${briefId}`);
+
+            } catch (err: any) {
+                clearInterval(progressTimer);
+                console.error("Generation error:", err);
+                setError(err.message || "Failed to generate brief. Please try again.");
+                setStatus("Generation failed");
+            }
+        };
+
+        generateBrief();
+    }, [briefId, router]);
+
+    const handleRetry = () => {
+        setError(null);
+        setProgress(0);
+        hasStarted.current = false;
+        window.location.reload();
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] text-center">
@@ -97,18 +161,34 @@ export default function GeneratingPage() {
                 <div className="flex items-center justify-center gap-4 mb-8">
                     <div className="relative w-64 h-2 bg-b-surface2 rounded-full overflow-hidden">
                         <div
-                            className="absolute inset-y-0 left-0 bg-primary1 rounded-full transition-all duration-1000"
-                            style={{ width: `${((5 - countdown) / 5) * 100}%` }}
+                            className="absolute inset-y-0 left-0 bg-primary1 rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%` }}
                         />
                     </div>
-                    <span className="text-body-bold text-primary1">{countdown}s</span>
+                    <span className="text-body-bold text-primary1">{Math.round(progress)}%</span>
                 </div>
 
-                {/* Generating button */}
-                <div className="inline-flex items-center gap-3 px-6 py-3 bg-b-surface2 rounded-full shadow-hover">
-                    <RefreshCircle size={20} color="#2d68ff" className="animate-spin" />
-                    <span className="text-body-bold text-t-primary">Generating with AI</span>
-                </div>
+                {/* Error state */}
+                {error ? (
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="inline-flex items-center gap-3 px-6 py-3 bg-primary3/10 rounded-full">
+                            <Warning2 size={20} color="#ff381c" />
+                            <span className="text-body-bold text-primary3">{error}</span>
+                        </div>
+                        <button
+                            onClick={handleRetry}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-primary1 text-white rounded-full hover:bg-primary1/90 transition-colors"
+                        >
+                            <RefreshCircle size={20} />
+                            <span className="text-body-bold">Try Again</span>
+                        </button>
+                    </div>
+                ) : (
+                    <div className="inline-flex items-center gap-3 px-6 py-3 bg-b-surface2 rounded-full shadow-hover">
+                        <RefreshCircle size={20} color="#2d68ff" className="animate-spin" />
+                        <span className="text-body-bold text-t-primary">Generating with AI</span>
+                    </div>
+                )}
             </div>
         </div>
     );

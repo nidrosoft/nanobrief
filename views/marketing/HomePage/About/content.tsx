@@ -1,10 +1,9 @@
 export const content = [
     {
-        title: "Create project briefs instantly",
+        title: "Save 2+ hours per brief",
         content: (
             <>
-                &quot;Save hours of preparation time with <br></br>intelligent
-                brief generation.&quot;,
+                Stop starting from scratch. Our AI generates <br></br>comprehensive briefs in under 2 minutes.
             </>
         ),
         icon: "star",
@@ -16,9 +15,9 @@ export const content = [
         imageDarkMobile: "/images/about-pic-dark-mobile-1.png",
     },
     {
-        title: "Brieft management",
+        title: "Organize & iterate easily",
         content:
-            "Effortlessly view, edit, and update project details as they evolve.",
+            "Effortlessly view, edit, and update project details as they evolve. Keep everything in one place.",
         icon: "edit-list",
         imageLight: "/images/about-pic-light-2.png",
         imageDark: "/images/about-pic-dark-2.png",
@@ -28,11 +27,10 @@ export const content = [
         imageDarkMobile: "/images/about-pic-dark-mobile-2.png",
     },
     {
-        title: "Quick share",
+        title: "Collaborate seamlessly",
         content: (
             <>
-                Instantly generate shareable links for your <br></br>project
-                briefs.
+                Share briefs with one click. Clients and teams <br></br>can view without creating an account.
             </>
         ),
         icon: "share",

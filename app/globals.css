@@ -140,10 +140,10 @@
     --default-transition-duration: 0.2s;
     --font-satoshi: var(--font-satoshi);
     --text-0: 0;
-    --text-hero: 3.75rem;
-    --text-hero--line-height: 3.75rem;
-    --text-hero--letter-spacing: -0.015em;
-    --text-hero--font-weight: 700;
+    --text-hero: 5rem;
+    --text-hero--line-height: 5.25rem;
+    --text-hero--letter-spacing: -0.02em;
+    --text-hero--font-weight: 800;
     --text-h1: 2.75rem;
     --text-h1--line-height: 3rem;
     --text-h1--letter-spacing: -0.015em;

@@ -26,8 +26,50 @@ const satoshi = localFont({
 });
 
 export const metadata: Metadata = {
-    title: "Briefberry",
-    description: "AI Brief Generator Tailwind Kit",
+    title: {
+        default: "NanoBrief - AI-Powered Brief Generator",
+        template: "%s | NanoBrief",
+    },
+    description: "Create professional project briefs in minutes with AI. NanoBrief helps marketers, designers, and agencies generate comprehensive briefs that capture every detail.",
+    keywords: ["brief generator", "AI brief", "project brief", "creative brief", "marketing brief", "design brief", "agency tools", "AI assistant"],
+    authors: [{ name: "NanoBrief" }],
+    creator: "NanoBrief",
+    publisher: "NanoBrief",
+    metadataBase: new URL("https://nanobrief.com"),
+    openGraph: {
+        type: "website",
+        locale: "en_US",
+        url: "https://nanobrief.com",
+        siteName: "NanoBrief",
+        title: "NanoBrief - AI-Powered Brief Generator",
+        description: "Create professional project briefs in minutes with AI. Stop wasting hours on documentation—let AI capture every detail for you.",
+        images: [
+            {
+                url: "/og-image.png",
+                width: 1200,
+                height: 630,
+                alt: "NanoBrief - AI-Powered Brief Generator",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "NanoBrief - AI-Powered Brief Generator",
+        description: "Create professional project briefs in minutes with AI. Stop wasting hours on documentation—let AI capture every detail for you.",
+        images: ["/twitter-card.png"],
+        creator: "@nanobrief",
+    },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            "max-video-preview": -1,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+        },
+    },
 };
 
 export default function RootLayout({
@@ -38,90 +80,8 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <head>
-                {/* Description no longer than 155 characters */}
-                <meta
-                    name="description"
-                    content="Briefberry: AI Brief Generator Tailwind Kit"
-                />
-                {/* Product Name */}
-                <meta
-                    name="product-name"
-                    content="AI Brief Generator Tailwind Kit"
-                />
-                {/* Twitter Card data */}
-                <meta name="twitter:card" content="summary" />
-                <meta name="twitter:site" content="@ui8" />
-                <meta
-                    name="twitter:title"
-                    content="AI Brief Generator Tailwind Kit"
-                />
-                <meta
-                    name="twitter:description"
-                    content="Build AI powered brief generation tools with ready to use Tailwind code"
-                />
-                <meta name="twitter:creator" content="@ui8" />
-                {/* Twitter Summary card images must be at least 120x120px */}
-                <meta
-                    name="twitter:image"
-                    content="https://briefberry-cyan.vercel.app/twitter-card.png"
-                />
-                {/* Open Graph data for Facebook */}
-                <meta
-                    property="og:title"
-                    content="AI Brief Generator Tailwind Kit"
-                />
-                <meta property="og:type" content="Article" />
-                <meta
-                    property="og:url"
-                    content="https://ui8.net/ui8/products/briefberry-ai-powered-brief-generation-ui-kit-coded"
-                />
-                <meta
-                    property="og:image"
-                    content="https://briefberry-cyan.vercel.app/fb-og-image.png"
-                />
-                <meta
-                    property="og:description"
-                    content="Build AI powered brief generation tools with ready to use Tailwind code"
-                />
-                <meta
-                    property="og:site_name"
-                    content="AI Brief Generator Tailwind Kit"
-                />
-                <meta property="fb:admins" content="132951670226590" />
-                {/* Open Graph data for LinkedIn */}
-                <meta
-                    property="og:title"
-                    content="AI Brief Generator Tailwind Kit"
-                />
-                <meta
-                    property="og:url"
-                    content="https://ui8.net/ui8/products/briefberry-ai-powered-brief-generation-ui-kit-coded"
-                />
-                <meta
-                    property="og:image"
-                    content="https://briefberry-cyan.vercel.app/linkedin-og-image.png"
-                />
-                <meta
-                    property="og:description"
-                    content="Build AI powered brief generation tools with ready to use Tailwind code"
-                />
-                {/* Open Graph data for Pinterest */}
-                <meta
-                    property="og:title"
-                    content="AI Brief Generator Tailwind Kit"
-                />
-                <meta
-                    property="og:url"
-                    content="https://ui8.net/ui8/products/briefberry-ai-powered-brief-generation-ui-kit-coded"
-                />
-                <meta
-                    property="og:image"
-                    content="https://briefberry-cyan.vercel.app/pinterest-og-image.png"
-                />
-                <meta
-                    property="og:description"
-                    content="Build AI powered brief generation tools with ready to use Tailwind code"
-                />
+                <link rel="icon" href="/favicon.ico" sizes="any" />
+                <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
             </head>
             <body
                 className={`${satoshi.variable} bg-b-surface1 font-satoshi text-[1rem] text-t-primary antialiased`}

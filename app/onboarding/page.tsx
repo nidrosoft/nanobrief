@@ -1,18 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import Field from "@/components/Field";
-import Icon from "@/components/Icon";
+import { createClient } from "@/lib/supabase/client";
+import { 
+    Magicpen, 
+    Brush2, 
+    VideoPlay, 
+    DocumentText, 
+    Calendar, 
+    Briefcase,
+    TickCircle
+} from "iconsax-react";
 
 const industries = [
-    { id: "marketing", name: "Marketing & Advertising", icon: "megaphone" },
-    { id: "design", name: "Design & Creative", icon: "post" },
-    { id: "video", name: "Video Production", icon: "play" },
-    { id: "content", name: "Content & SEO", icon: "align-right" },
-    { id: "events", name: "Event Planning", icon: "calendar" },
-    { id: "consulting", name: "Consulting", icon: "briefcase" },
+    { id: "marketing", name: "Marketing & Advertising", Icon: Magicpen },
+    { id: "design", name: "Design & Creative", Icon: Brush2 },
+    { id: "video", name: "Video Production", Icon: VideoPlay },
+    { id: "content", name: "Content & SEO", Icon: DocumentText },
+    { id: "events", name: "Event Planning", Icon: Calendar },
+    { id: "consulting", name: "Consulting", Icon: Briefcase },
 ];
 
 const companySize = [
@@ -33,8 +42,10 @@ const goals = [
 
 export default function OnboardingPage() {
     const router = useRouter();
+    const supabase = createClient();
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
 
     // Form data
     const [fullName, setFullName] = useState("");
@@ -45,6 +56,25 @@ export default function OnboardingPage() {
     const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
 
     const totalSteps = 5;
+
+    // Load existing user data on mount
+    useEffect(() => {
+        const loadUserData = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from("users")
+                    .select("full_name")
+                    .eq("id", user.id)
+                    .single();
+                
+                if (profile?.full_name) {
+                    setFullName(profile.full_name);
+                }
+            }
+        };
+        loadUserData();
+    }, [supabase]);
 
     const handleNext = () => {
         if (step < totalSteps) {
@@ -60,12 +90,64 @@ export default function OnboardingPage() {
         }
     };
 
-    const handleComplete = () => {
+    const handleComplete = async () => {
         setIsLoading(true);
-        // TODO: Save onboarding data to Supabase
-        setTimeout(() => {
+        setError("");
+
+        try {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                console.error("User error:", userError);
+                setError("User not found. Please sign in again.");
+                setIsLoading(false);
+                return;
+            }
+
+            console.log("Updating user:", user.id, {
+                full_name: fullName,
+                role: role,
+                company_name: companyName,
+                company_size: selectedSize,
+                primary_industry: selectedIndustry,
+                goals: selectedGoals,
+            });
+
+            // Update user profile with onboarding data
+            const { data: updateData, error: updateError } = await supabase
+                .from("users")
+                .update({
+                    full_name: fullName,
+                    role: role,
+                    company_name: companyName,
+                    company_size: selectedSize,
+                    primary_industry: selectedIndustry,
+                    goals: selectedGoals,
+                    onboarding_completed: true,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", user.id)
+                .select();
+
+            console.log("Update result:", updateData, updateError);
+
+            if (updateError) {
+                console.error("Update error:", updateError);
+                setError(updateError.message);
+                setIsLoading(false);
+                return;
+            }
+
+            // Force a small delay to ensure the update is committed
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             router.push("/dashboard");
-        }, 1000);
+            router.refresh();
+        } catch (err: any) {
+            console.error("Unexpected error:", err);
+            setError(err.message || "An unexpected error occurred. Please try again.");
+            setIsLoading(false);
+        }
     };
 
     const toggleGoal = (goalId: string) => {
@@ -115,6 +197,13 @@ export default function OnboardingPage() {
 
             {/* Step content */}
             <div className="p-8 bg-b-surface2 rounded-4xl shadow-hover">
+                {/* Error Message */}
+                {error && (
+                    <div className="mb-4 p-3 bg-primary3/10 border border-primary3/20 rounded-xl text-primary3 text-small">
+                        {error}
+                    </div>
+                )}
+
                 {/* Step 1: Welcome */}
                 {step === 1 && (
                     <div className="text-center">
@@ -204,40 +293,40 @@ export default function OnboardingPage() {
                             What type of briefs will you create most often?
                         </p>
                         <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
-                            {industries.map((industry) => (
-                                <button
-                                    key={industry.id}
-                                    type="button"
-                                    onClick={() =>
-                                        setSelectedIndustry(industry.id)
-                                    }
-                                    className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
-                                        selectedIndustry === industry.id
-                                            ? "border-primary1 bg-primary1/5"
-                                            : "border-stroke-subtle hover:border-stroke2"
-                                    }`}
-                                >
-                                    <div
-                                        className={`flex items-center justify-center w-10 h-10 rounded-xl ${
+                            {industries.map((industry) => {
+                                const IndustryIcon = industry.Icon;
+                                return (
+                                    <button
+                                        key={industry.id}
+                                        type="button"
+                                        onClick={() =>
+                                            setSelectedIndustry(industry.id)
+                                        }
+                                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
                                             selectedIndustry === industry.id
-                                                ? "bg-primary1/10"
-                                                : "bg-b-surface1"
+                                                ? "border-primary1 bg-primary1/5"
+                                                : "border-stroke-subtle hover:border-stroke2"
                                         }`}
                                     >
-                                        <Icon
-                                            className={`${
+                                        <div
+                                            className={`flex items-center justify-center w-10 h-10 rounded-xl ${
                                                 selectedIndustry === industry.id
-                                                    ? "fill-primary1"
-                                                    : "fill-t-secondary"
+                                                    ? "bg-primary1/10"
+                                                    : "bg-b-surface1"
                                             }`}
-                                            name={industry.icon}
-                                        />
-                                    </div>
-                                    <span className="text-body-bold">
-                                        {industry.name}
-                                    </span>
-                                </button>
-                            ))}
+                                        >
+                                            <IndustryIcon
+                                                size={20}
+                                                variant="Bold"
+                                                color={selectedIndustry === industry.id ? "#2d68ff" : "#8E8E93"}
+                                            />
+                                        </div>
+                                        <span className="text-body-bold">
+                                            {industry.name}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -270,9 +359,10 @@ export default function OnboardingPage() {
                                         }`}
                                     >
                                         {selectedGoals.includes(goal.id) && (
-                                            <Icon
-                                                className="fill-white w-4 h-4"
-                                                name="check"
+                                            <TickCircle
+                                                size={16}
+                                                variant="Bold"
+                                                color="#ffffff"
                                             />
                                         )}
                                     </div>

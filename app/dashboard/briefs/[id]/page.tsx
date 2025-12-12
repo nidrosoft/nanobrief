@@ -1,84 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/Button";
+import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft2, Edit2, ExportSquare, DocumentDownload, Sms, Refresh, CloseCircle, Copy } from "iconsax-react";
 
-const briefContent = {
-    title: "Q4 Marketing Campaign",
-    industry: "Marketing & Advertising",
-    client: "Acme Corporation",
-    createdAt: "December 10, 2024",
-    sections: [
-        {
-            title: "Executive Summary",
-            content: `This brief outlines the Q4 marketing campaign for Acme Corporation, focusing on driving brand awareness and lead generation during the holiday season. The campaign will run across multiple digital channels with a focus on social media and display advertising.
+interface BriefSection {
+    id: string;
+    title: string;
+    content: string;
+    section_type: "text" | "list" | "table" | "structured";
+    section_data: any;
+    sort_order: number;
+}
 
-The primary objective is to increase brand awareness by 25% and generate 500 qualified leads by the end of Q4. The campaign will target millennials and Gen Z consumers interested in sustainable products.`,
-        },
-        {
-            title: "Objectives & Goals",
-            content: `**Primary Objectives:**
-• Increase brand awareness by 25% (measured by social mentions and search volume)
-• Generate 500 qualified leads through landing page conversions
-• Achieve 2M impressions across all channels
+interface Brief {
+    id: string;
+    title: string;
+    industry_id: string;
+    client_name: string | null;
+    created_at: string;
+    status: string;
+}
 
-**Key Performance Indicators:**
-• Cost per lead: Target $15 or less
-• Click-through rate: Target 2.5%
-• Social engagement rate: Target 4%
-
-**30/60/90 Day Milestones:**
-• Day 30: Launch all creative assets, achieve 500K impressions
-• Day 60: Optimize based on performance data, reach 1.2M impressions
-• Day 90: Final push, achieve all KPI targets`,
-        },
-        {
-            title: "Target Audience",
-            content: `**Primary Audience:**
-• Age: 25-40 years old
-• Location: United States, primarily urban areas
-• Income: $50,000 - $100,000 annually
-• Interests: Sustainability, eco-friendly products, conscious consumerism
-
-**Psychographics:**
-• Values environmental responsibility
-• Willing to pay premium for sustainable products
-• Active on social media, particularly Instagram and TikTok
-• Influenced by peer recommendations and reviews
-
-**Current Perception:**
-The audience is generally unaware of the brand but receptive to sustainable alternatives in the market.
-
-**Desired Perception:**
-Position Acme as the go-to brand for sustainable, high-quality products that don't compromise on style or functionality.`,
-        },
-        {
-            title: "Timeline & Budget",
-            content: `**Campaign Timeline:**
-• Creative Development: Nov 1-15
-• Asset Review & Approval: Nov 16-22
-• Campaign Launch: Nov 25 (Black Friday)
-• Campaign End: Dec 31
-
-**Total Budget: $75,000**
-
-**Budget Allocation:**
-• Media Spend: $50,000 (67%)
-• Creative Production: $15,000 (20%)
-• Influencer Partnerships: $7,500 (10%)
-• Contingency: $2,500 (3%)`,
-        },
-    ],
+const industryNames: Record<string, string> = {
+    marketing: "Marketing & Advertising",
+    design: "Design & Creative",
+    video: "Video Production",
+    content: "Content & SEO",
+    events: "Event Planning",
+    consulting: "Consulting",
+    architecture: "Architecture",
+    pr: "Public Relations",
+    legal: "Legal Services",
+    custom: "Custom",
 };
 
 export default function BriefViewPage() {
     const params = useParams();
     const router = useRouter();
+    const supabase = createClient();
     const [showShareModal, setShowShareModal] = useState(false);
-    const briefId = params.id;
+    const [brief, setBrief] = useState<Brief | null>(null);
+    const [sections, setSections] = useState<BriefSection[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const briefId = params.id as string;
+
+    useEffect(() => {
+        const loadBrief = async () => {
+            // Load brief
+            const { data: briefData } = await supabase
+                .from("briefs")
+                .select("*")
+                .eq("id", briefId)
+                .single();
+
+            if (briefData) {
+                setBrief(briefData);
+            }
+
+            // Load sections
+            const { data: sectionsData } = await supabase
+                .from("brief_sections")
+                .select("*")
+                .eq("brief_id", briefId)
+                .order("sort_order", { ascending: true });
+
+            if (sectionsData) {
+                setSections(sectionsData);
+            }
+
+            setIsLoading(false);
+        };
+
+        loadBrief();
+    }, [briefId, supabase]);
 
     const shareLink = `https://nanobrief.app/share/${briefId}`;
 
@@ -91,7 +89,8 @@ export default function BriefViewPage() {
     };
 
     const handleEmail = () => {
-        const subject = encodeURIComponent(`Brief: ${briefContent.title}`);
+        if (!brief) return;
+        const subject = encodeURIComponent(`Brief: ${brief.title}`);
         const body = encodeURIComponent(`Check out this brief: ${shareLink}`);
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
     };
@@ -99,6 +98,134 @@ export default function BriefViewPage() {
     const handleRegenerate = () => {
         console.log("Regenerating brief...");
     };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    };
+
+    // Render section content based on type
+    const renderSectionContent = (section: BriefSection) => {
+        const { section_type, content, section_data } = section;
+
+        // For list type with items
+        if (section_type === "list" && section_data?.length > 0) {
+            return (
+                <ul className="space-y-2">
+                    {section_data.map((item: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-3 text-body text-t-secondary">
+                            <span className="w-1.5 h-1.5 mt-2 rounded-full bg-primary1 shrink-0" />
+                            <span>{item}</span>
+                        </li>
+                    ))}
+                </ul>
+            );
+        }
+
+        // For table type with headers and rows
+        if (section_type === "table" && section_data?.headers && section_data?.rows) {
+            return (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="border-b border-stroke-subtle">
+                                {section_data.headers.map((header: string, idx: number) => (
+                                    <th key={idx} className="py-3 px-4 text-small font-semibold text-t-primary">
+                                        {header}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {section_data.rows.map((row: string[], rowIdx: number) => (
+                                <tr key={rowIdx} className="border-b border-stroke-subtle last:border-0">
+                                    {row.map((cell: string, cellIdx: number) => (
+                                        <td key={cellIdx} className="py-3 px-4 text-body text-t-secondary">
+                                            {cell}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        // For structured type with key-value pairs
+        if (section_type === "structured" && section_data && typeof section_data === "object") {
+            return (
+                <div className="space-y-3">
+                    {Object.entries(section_data).map(([key, value], idx) => (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+                            <span className="text-small font-semibold text-t-primary min-w-[140px]">{key}:</span>
+                            <span className="text-body text-t-secondary">{String(value)}</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // Default: render as formatted text
+        // Parse markdown-like formatting for better display
+        const formattedContent = content
+            .split('\n')
+            .map((line, idx) => {
+                // Bold text
+                const boldRegex = /\*\*(.+?)\*\*/g;
+                let processedLine = line.replace(boldRegex, '<strong class="font-semibold text-t-primary">$1</strong>');
+                
+                // Bullet points
+                if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+                    const bulletContent = line.replace(/^[\s]*[•-]\s*/, '');
+                    return (
+                        <div key={idx} className="flex items-start gap-3 mb-1">
+                            <span className="w-1.5 h-1.5 mt-2 rounded-full bg-primary1 shrink-0" />
+                            <span dangerouslySetInnerHTML={{ __html: bulletContent.replace(boldRegex, '<strong class="font-semibold text-t-primary">$1</strong>') }} />
+                        </div>
+                    );
+                }
+                
+                // Regular line
+                if (line.trim()) {
+                    return (
+                        <p key={idx} className="mb-2" dangerouslySetInnerHTML={{ __html: processedLine }} />
+                    );
+                }
+                
+                return <br key={idx} />;
+            });
+
+        return <div className="text-body text-t-secondary">{formattedContent}</div>;
+    };
+
+    if (isLoading) {
+        return (
+            <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[50vh]">
+                <div className="text-center">
+                    <div className="animate-spin w-8 h-8 border-2 border-primary1 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p className="text-t-secondary">Loading brief...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!brief) {
+        return (
+            <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[50vh]">
+                <div className="text-center">
+                    <h2 className="text-h3 mb-2">Brief not found</h2>
+                    <p className="text-t-secondary mb-4">This brief may have been deleted or doesn't exist.</p>
+                    <Button as="link" href="/dashboard/briefs" isSecondary>
+                        Back to briefs
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto pb-24">
@@ -113,18 +240,22 @@ export default function BriefViewPage() {
                 </button>
                 <div className="flex items-start justify-between gap-4 max-md:flex-col">
                     <div>
-                        <h1 className="text-h2 mb-2">{briefContent.title}</h1>
+                        <h1 className="text-h2 mb-2">{brief.title}</h1>
                         <div className="flex items-center gap-3 text-small text-t-secondary">
-                            <span>{briefContent.industry}</span>
+                            <span>{industryNames[brief.industry_id] || "Brief"}</span>
+                            {brief.client_name && (
+                                <>
+                                    <span>•</span>
+                                    <span>{brief.client_name}</span>
+                                </>
+                            )}
                             <span>•</span>
-                            <span>{briefContent.client}</span>
-                            <span>•</span>
-                            <span>{briefContent.createdAt}</span>
+                            <span>{formatDate(brief.created_at)}</span>
                         </div>
                     </div>
                     <Button
                         as="link"
-                        href="/dashboard/new/marketing"
+                        href={`/dashboard/new/${brief.industry_id}`}
                         isStroke
                         className="shrink-0"
                     >
@@ -136,21 +267,25 @@ export default function BriefViewPage() {
 
             {/* Brief Content */}
             <div className="p-8 bg-b-surface2 rounded-4xl shadow-hover mb-8 max-md:p-6">
-                {briefContent.sections.map((section, index) => (
-                    <div
-                        key={section.title}
-                        className={`${
-                            index !== briefContent.sections.length - 1
-                                ? "mb-8 pb-8 border-b border-stroke-subtle"
-                                : ""
-                        }`}
-                    >
-                        <h2 className="text-h4 mb-4">{section.title}</h2>
-                        <div className="text-body text-t-secondary whitespace-pre-line">
-                            {section.content}
+                {sections.length > 0 ? (
+                    sections.map((section, index) => (
+                        <div
+                            key={section.id}
+                            className={`${
+                                index !== sections.length - 1
+                                    ? "mb-8 pb-8 border-b border-stroke-subtle"
+                                    : ""
+                            }`}
+                        >
+                            <h2 className="text-h4 mb-4">{section.title}</h2>
+                            {renderSectionContent(section)}
                         </div>
+                    ))
+                ) : (
+                    <div className="text-center py-8">
+                        <p className="text-t-secondary">No content available for this brief.</p>
                     </div>
-                ))}
+                )}
             </div>
 
             {/* Floating Action Bar */}

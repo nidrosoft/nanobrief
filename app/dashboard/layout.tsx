@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Image from "@/components/Image";
 import ThemeButton from "@/components/ThemeButton";
-import { Home2, DocumentText, Add, Setting2, Star1, Logout } from "iconsax-react";
+import Button from "@/components/Button";
+import { Home2, DocumentText, Add, Setting2, Star1, Logout, CloseCircle } from "iconsax-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
     { name: "Home", href: "/dashboard", Icon: Home2, activeColor: "#2d68ff", inactiveColor: "#8E8E93" },
@@ -20,13 +22,9 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    const router = useRouter();
+    const { signOut } = useAuth();
     const [isExpanded, setIsExpanded] = useState(false);
-
-    const handleLogout = () => {
-        // TODO: Implement logout with Supabase
-        router.push("/");
-    };
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     return (
         <div className="flex min-h-screen bg-b-surface1">
@@ -120,13 +118,13 @@ export default function DashboardLayout({
                                 }`}
                             >
                                 <span className="text-xs text-t-secondary">Credits:</span>
-                                <span className="text-xs font-bold text-t-primary">3/5</span>
+                                <span className="text-xs font-bold text-t-primary">1/2</span>
                             </div>
                         </div>
 
                         {/* User */}
                         <button
-                            onClick={handleLogout}
+                            onClick={() => setShowLogoutModal(true)}
                             className="flex items-center gap-2.5 w-full p-1.5 rounded-lg text-t-secondary hover:bg-b-highlight hover:text-t-primary transition-colors"
                         >
                             <div className="flex items-center justify-center w-7 h-7 shrink-0">
@@ -182,6 +180,54 @@ export default function DashboardLayout({
 
             {/* Theme toggle */}
             <ThemeButton className="fixed! right-5 bottom-5 z-5 max-md:bottom-20" />
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center">
+                    <div 
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setShowLogoutModal(false)}
+                    />
+                    <div className="relative bg-b-surface2 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                        <button
+                            onClick={() => setShowLogoutModal(false)}
+                            className="absolute top-4 right-4 text-t-tertiary hover:text-t-primary transition-colors"
+                        >
+                            <CloseCircle size={24} />
+                        </button>
+                        
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-primary3/10 rounded-full">
+                                <Logout size={32} color="#ff381c" />
+                            </div>
+                            <h3 className="text-h3 mb-2">Sign out?</h3>
+                            <p className="text-body text-t-secondary">
+                                Are you sure you want to sign out of your account?
+                            </p>
+                        </div>
+                        
+                        <div className="flex gap-3">
+                            <Button
+                                isStroke
+                                className="flex-1"
+                                onClick={() => setShowLogoutModal(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                isSecondary
+                                className="flex-1 !bg-primary3 hover:!bg-primary3/90"
+                                onClick={async () => {
+                                    setShowLogoutModal(false);
+                                    await signOut();
+                                }}
+                            >
+                                Sign out
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

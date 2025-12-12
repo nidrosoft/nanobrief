@@ -1,6 +1,7 @@
+"use client";
+
 import { useState } from "react";
 import Image from "@/components/Image";
-import Icon from "@/components/Icon";
 import Button from "@/components/Button";
 import Modal from "@/components/Modal";
 import Feature from "./Feature";
@@ -15,7 +16,7 @@ type PricingProps = {
     hideCircleButton?: boolean;
 };
 
-const Pricing = ({ className, title, hideCircleButton }: PricingProps) => {
+const Pricing = ({ className, title }: PricingProps) => {
     const [isModalPremiumOpen, setIsModalPremiumOpen] = useState(false);
     const [isModalFreeOpen, setIsModalFreeOpen] = useState(false);
 
@@ -23,103 +24,97 @@ const Pricing = ({ className, title, hideCircleButton }: PricingProps) => {
         <>
             <div className={className || ""}>
                 <div className="center">
-                    <div className="max-w-130 mx-auto mb-16 text-center text-h1 max-lg:mb-12 max-md:max-w-full max-md:mb-8 max-md:text-left">
+                    <div className="max-w-150 mx-auto mb-16 text-center text-h1 max-lg:mb-12 max-md:max-w-full max-md:mb-8 max-md:text-left">
                         {title}
                     </div>
-                    <div className="flex max-w-3xl mx-auto max-md:block">
-                        {pricing.map((item, index) => (
-                            <div
-                                className="
-                                    group flex flex-col w-1/2 p-2
-                                    max-md:w-full max-md:min-h-126 max-md:first:rounded-5xl max-md:first:shadow-[inset_0px_0px_0px_1.5px_var(--color-stroke2)] max-md:not-last:mb-6
-                                    nth-2:relative nth-2:before:absolute nth-2:before:inset-0 nth-2:before:rounded-5xl nth-2:before:border-[1.5px] nth-2:before:border-b-subtle nth-2:before:-b-from-40% nth-2:before:-b-to-100%
-                                "
-                                key={index}
-                            >
+                    <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto max-lg:grid-cols-1 max-lg:max-w-md">
+                        {pricing.map((item, index) => {
+                            const isPro = item.title === "Pro";
+                            const isTeam = item.title === "Team";
+                            
+                            return (
                                 <div
-                                    className="
-                                        relative z-2 flex flex-col grow p-2 rounded-4xl overflow-hidden
-                                        group-nth-2:bg-b-surface2
-                                    "
+                                    key={index}
+                                    className={`
+                                        relative flex flex-col rounded-4xl overflow-hidden
+                                        ${isPro 
+                                            ? "bg-b-surface2 shadow-[inset_0px_0px_0px_2px_var(--color-primary1)]" 
+                                            : "bg-b-surface2 shadow-[inset_0px_0px_0px_1.5px_var(--color-stroke-subtle)]"
+                                        }
+                                    `}
                                 >
-                                    <div className="relative z-2 pt-13 px-10 pb-8 max-lg:px-6 max-md:pt-6 max-md:pr-4 max-md:pl-6">
-                                        {item.title === "Premium" &&
-                                            !hideCircleButton && (
-                                                <Button
-                                                    className="absolute top-2 right-2 [&_svg]:-rotate-45"
-                                                    isCircle
-                                                    isStroke
-                                                    onClick={() =>
-                                                        setIsModalPremiumOpen(
-                                                            true
-                                                        )
-                                                    }
-                                                >
-                                                    <Icon name="arrow" />
-                                                </Button>
-                                            )}
-                                        <div className="mb-8 text-h3">
-                                            {item.title}
+                                    {isPro && (
+                                        <div className="absolute top-4 right-4 px-3 py-1 bg-primary1 text-white text-small font-medium rounded-full">
+                                            Most Popular
                                         </div>
+                                    )}
+                                    
+                                    {/* Header with title and price */}
+                                    <div className="p-8 pb-6 max-lg:p-6 max-lg:pb-4">
+                                        <div className="mb-2 text-h3">{item.title}</div>
+                                        {item.description && (
+                                            <p className="text-small text-t-tertiary mb-4">
+                                                {item.description}
+                                            </p>
+                                        )}
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-h1">${item.price}</span>
+                                            <span className="text-body text-t-secondary">/ month</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Features list */}
+                                    <div className="flex-1 px-8 pb-6 max-lg:px-6 max-lg:pb-4">
                                         <ul className="flex flex-col gap-3">
-                                            {item.features.map(
-                                                (feature, index) => (
-                                                    <Feature
-                                                        item={feature}
-                                                        key={index}
-                                                    />
-                                                )
-                                            )}
+                                            {item.features.map((feature, idx) => (
+                                                <Feature item={feature} key={idx} />
+                                            ))}
                                         </ul>
                                     </div>
-                                    <div
-                                        className="
-                                            relative z-2 mt-auto px-10 py-6 rounded-3xl max-lg:p-6
-                                            group-first:shadow-[inset_0px_0px_0px_1.5px_var(--color-stroke-subtle)]
-                                            group-nth-2:bg-b-surface2 group-nth-2:shadow-[inset_0px_0px_0px_1.5px_var(--color-stroke2)]
-                                        "
-                                    >
-                                        <div className="flex items-center mb-4">
-                                            <div className="text-h2 mr-3">
-                                                ${item.price}
-                                            </div>
-                                            <div className="text-body-lg-bold text-t-secondary/80">
-                                                /&nbsp;&nbsp;month
-                                            </div>
-                                        </div>
-                                        {item.title === "Premium" ? (
+
+                                    {/* CTA Button */}
+                                    <div className="p-8 pt-4 max-lg:p-6 max-lg:pt-4">
+                                        {isPro ? (
                                             <Button
+                                                className="w-full"
                                                 isSecondary
-                                                onClick={() =>
-                                                    setIsModalPremiumOpen(true)
-                                                }
+                                                onClick={() => setIsModalPremiumOpen(true)}
                                             >
-                                                Get started now
+                                                Get started
+                                            </Button>
+                                        ) : isTeam ? (
+                                            <Button
+                                                className="w-full"
+                                                isStroke
+                                                onClick={() => setIsModalPremiumOpen(true)}
+                                            >
+                                                Contact sales
                                             </Button>
                                         ) : (
                                             <Button
-                                                isPrimary
-                                                onClick={() =>
-                                                    setIsModalFreeOpen(true)
-                                                }
+                                                className="w-full"
+                                                isStroke
+                                                onClick={() => setIsModalFreeOpen(true)}
                                             >
-                                                Create an account
+                                                Create account
                                             </Button>
                                         )}
                                     </div>
-                                    {item.title === "Premium" && (
-                                        <div className="absolute right-0 bottom-0 max-md:-right-4 max-md:-bottom-4">
+
+                                    {/* Gradient decoration for Pro */}
+                                    {isPro && (
+                                        <div className="absolute right-0 bottom-0 pointer-events-none opacity-50">
                                             <Image
                                                 src="/images/pricing-gradient.png"
-                                                width={351}
-                                                height={291}
+                                                width={200}
+                                                height={166}
                                                 alt=""
                                             />
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </div>

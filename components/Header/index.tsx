@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -37,14 +39,14 @@ const Header = ({
                 <Link className="w-33.75 mr-auto" href="/">
                     <Image
                         className="w-full opacity-100 dark:hidden!"
-                        src="/images/logo-dark.svg"
+                        src="/images/logo-dark.png"
                         width={135}
                         height={36}
                         alt="Logo"
                     />
                     <Image
                         className="hidden! w-full opacity-100 dark:block!"
-                        src="/images/logo-light.svg"
+                        src="/images/logo-light.png"
                         width={135}
                         height={36}
                         alt="Logo"

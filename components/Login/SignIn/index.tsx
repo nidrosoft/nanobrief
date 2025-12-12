@@ -16,7 +16,7 @@ const SignIn = ({ onResetPassword, onSignUp, onLogin }: Props) => {
     return (
         <div className="">
             <div className="mb-10 text-center text-h3">
-                Sign in to Briefberry
+                Sign in to NanoBrief
             </div>
             <Button className="w-full" isPrimary onClick={onLogin}>
                 <Image

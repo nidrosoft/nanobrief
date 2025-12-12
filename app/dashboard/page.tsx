@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/Button";
+import { useAuth } from "@/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 import { 
     Magicpen, 
     Brush2, 
@@ -11,8 +14,68 @@ import {
     Star1, 
     Clock, 
     ArrowRight2,
-    Add
+    Add,
+    Calendar,
+    Briefcase,
+    Building,
+    Microphone2,
+    Judge,
+    Setting4
 } from "iconsax-react";
+
+interface Brief {
+    id: string;
+    title: string;
+    industry_id: string;
+    created_at: string;
+    updated_at: string;
+}
+
+interface UserStats {
+    total_briefs: number;
+    briefs_used: number;
+    briefs_limit: number;
+    briefs_remaining: number;
+}
+
+const industryIcons: Record<string, typeof Magicpen> = {
+    marketing: Magicpen,
+    design: Brush2,
+    video: VideoPlay,
+    content: Edit,
+    events: Calendar,
+    consulting: Briefcase,
+    architecture: Building,
+    pr: Microphone2,
+    legal: Judge,
+    custom: Setting4,
+};
+
+const industryColors: Record<string, string> = {
+    marketing: "#2d68ff",
+    design: "#a444f3",
+    video: "#ff381c",
+    content: "#00a656",
+    events: "#f52495",
+    consulting: "#2d68ff",
+    architecture: "#6366f1",
+    pr: "#f59e0b",
+    legal: "#64748b",
+    custom: "#2d68ff",
+};
+
+const industryNames: Record<string, string> = {
+    marketing: "Marketing & Advertising",
+    design: "Design & Creative",
+    video: "Video Production",
+    content: "Content & SEO",
+    events: "Event Planning",
+    consulting: "Consulting",
+    architecture: "Architecture",
+    pr: "Public Relations",
+    legal: "Legal Services",
+    custom: "Custom",
+};
 
 const recentBriefs = [
     {
@@ -77,12 +140,63 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
+    const { profile } = useAuth();
+    const supabase = createClient();
+    const [briefs, setBriefs] = useState<Brief[]>([]);
+    const [stats, setStats] = useState<UserStats>({ total_briefs: 0, briefs_used: 0, briefs_limit: 5, briefs_remaining: 5 });
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadData = async () => {
+            // Load recent briefs
+            const { data: briefsData } = await supabase
+                .from("briefs")
+                .select("id, title, industry_id, created_at, updated_at")
+                .order("updated_at", { ascending: false })
+                .limit(5);
+
+            if (briefsData) {
+                setBriefs(briefsData);
+            }
+
+            // Load user stats
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: statsData } = await supabase.rpc("get_user_stats", { p_user_id: user.id });
+                if (statsData) {
+                    setStats(statsData);
+                }
+            }
+
+            setIsLoading(false);
+        };
+
+        loadData();
+    }, [supabase]);
+
+    const getTimeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 60) return `${diffMins} minutes ago`;
+        if (diffHours < 24) return `${diffHours} hours ago`;
+        if (diffDays === 1) return "Yesterday";
+        if (diffDays < 7) return `${diffDays} days ago`;
+        return date.toLocaleDateString();
+    };
+
+    const firstName = profile?.full_name?.split(" ")[0] || "there";
+
     return (
         <div className="max-w-6xl mx-auto">
             {/* Header */}
             <div className="flex items-center justify-between mb-10 max-md:flex-col max-md:items-start max-md:gap-4">
                 <div>
-                    <h1 className="text-h1 mb-2">Welcome back!</h1>
+                    <h1 className="text-h1 mb-2">Welcome back, {firstName}!</h1>
                     <p className="text-body-lg text-t-secondary">
                         Create professional briefs in minutes with AI assistance.
                     </p>
@@ -145,10 +259,12 @@ export default function DashboardPage() {
                     </Link>
                 </div>
 
-                {recentBriefs.length > 0 ? (
+                {briefs.length > 0 ? (
                     <div className="flex flex-col gap-3">
-                        {recentBriefs.map((brief) => {
-                            const BriefIcon = brief.Icon;
+                        {briefs.map((brief) => {
+                            const BriefIcon = industryIcons[brief.industry_id] || DocumentText;
+                            const iconColor = industryColors[brief.industry_id] || "#8E8E93";
+                            const industryName = industryNames[brief.industry_id] || "Brief";
                             return (
                                 <Link
                                     key={brief.id}
@@ -156,18 +272,18 @@ export default function DashboardPage() {
                                     className="flex items-center gap-4 p-4 bg-b-surface2 rounded-2xl hover:shadow-hover transition-all"
                                 >
                                     <div className="flex items-center justify-center w-12 h-12 bg-primary1/10 rounded-xl">
-                                        <BriefIcon size={24} variant="Bold" color={brief.iconColor} />
+                                        <BriefIcon size={24} variant="Bold" color={iconColor} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <h3 className="text-body-bold truncate">
                                             {brief.title}
                                         </h3>
                                         <p className="text-small text-t-tertiary">
-                                            {brief.industry}
+                                            {industryName}
                                         </p>
                                     </div>
                                     <span className="text-small text-t-tertiary shrink-0">
-                                        {brief.updatedAt}
+                                        {getTimeAgo(brief.updated_at)}
                                     </span>
                                     <ArrowRight2 size={20} color="#8E8E93" className="shrink-0" />
                                 </Link>
@@ -201,7 +317,7 @@ export default function DashboardPage() {
                             Briefs created
                         </span>
                     </div>
-                    <div className="text-h2">12</div>
+                    <div className="text-h2">{stats.total_briefs}</div>
                 </div>
                 <div className="p-6 bg-b-surface2 rounded-3xl">
                     <div className="flex items-center gap-3 mb-4">
@@ -212,7 +328,7 @@ export default function DashboardPage() {
                             Credits remaining
                         </span>
                     </div>
-                    <div className="text-h2">3/5</div>
+                    <div className="text-h2">{stats.briefs_remaining}/{stats.briefs_limit}</div>
                 </div>
                 <div className="p-6 bg-b-surface2 rounded-3xl">
                     <div className="flex items-center gap-3 mb-4">
@@ -223,7 +339,7 @@ export default function DashboardPage() {
                             Time saved
                         </span>
                     </div>
-                    <div className="text-h2">4.5h</div>
+                    <div className="text-h2">{(stats.total_briefs * 0.5).toFixed(1)}h</div>
                 </div>
             </div>
         </div>

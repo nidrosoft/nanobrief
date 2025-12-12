@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Select from "@/components/Select";
+import { createClient } from "@/lib/supabase/client";
 import { 
     Magicpen, 
     Brush2, 
@@ -18,6 +19,7 @@ import {
     Building,
     Microphone2,
     Judge,
+    Setting4,
     Icon as IconType
 } from "iconsax-react";
 
@@ -40,116 +42,117 @@ const sortOptions = [
     { id: 2, name: "A-Z" },
 ];
 
-const briefs = [
-    {
-        id: "1",
-        title: "Q4 Marketing Campaign",
-        industry: "marketing",
-        industryName: "Marketing & Advertising",
-        updatedAt: "2 hours ago",
-        createdAt: "Dec 10, 2024",
-        Icon: Magicpen,
-        iconColor: "#2d68ff",
-        bgColor: "bg-primary1/10",
-    },
-    {
-        id: "2",
-        title: "Website Redesign Project",
-        industry: "design",
-        industryName: "Design & Creative",
-        updatedAt: "Yesterday",
-        createdAt: "Dec 9, 2024",
-        Icon: Brush2,
-        iconColor: "#a444f3",
-        bgColor: "bg-accent2/10",
-    },
-    {
-        id: "3",
-        title: "Product Launch Video",
-        industry: "video",
-        industryName: "Video Production",
-        updatedAt: "3 days ago",
-        createdAt: "Dec 7, 2024",
-        Icon: VideoPlay,
-        iconColor: "#ff381c",
-        bgColor: "bg-primary3/10",
-    },
-    {
-        id: "4",
-        title: "SEO Content Strategy",
-        industry: "content",
-        industryName: "Content & SEO",
-        updatedAt: "1 week ago",
-        createdAt: "Dec 3, 2024",
-        Icon: Edit,
-        iconColor: "#00a656",
-        bgColor: "bg-primary2/10",
-    },
-    {
-        id: "5",
-        title: "Annual Company Summit",
-        industry: "events",
-        industryName: "Event Planning",
-        updatedAt: "2 weeks ago",
-        createdAt: "Nov 26, 2024",
-        Icon: Calendar,
-        iconColor: "#f52495",
-        bgColor: "bg-accent/10",
-    },
-    {
-        id: "6",
-        title: "Digital Transformation Initiative",
-        industry: "consulting",
-        industryName: "Consulting",
-        updatedAt: "3 weeks ago",
-        createdAt: "Nov 19, 2024",
-        Icon: Briefcase,
-        iconColor: "#2d68ff",
-        bgColor: "bg-primary1/10",
-    },
-    {
-        id: "7",
-        title: "Downtown Office Tower",
-        industry: "architecture",
-        industryName: "Architecture & Construction",
-        updatedAt: "4 days ago",
-        createdAt: "Dec 6, 2024",
-        Icon: Building,
-        iconColor: "#6366f1",
-        bgColor: "bg-[#6366f1]/10",
-    },
-    {
-        id: "8",
-        title: "Product Launch PR Campaign",
-        industry: "pr",
-        industryName: "Public Relations",
-        updatedAt: "5 days ago",
-        createdAt: "Dec 5, 2024",
-        Icon: Microphone2,
-        iconColor: "#f59e0b",
-        bgColor: "bg-[#f59e0b]/10",
-    },
-    {
-        id: "9",
-        title: "Estate Planning - Smith Family",
-        industry: "legal",
-        industryName: "Legal Services",
-        updatedAt: "1 week ago",
-        createdAt: "Dec 3, 2024",
-        Icon: Judge,
-        iconColor: "#64748b",
-        bgColor: "bg-[#64748b]/10",
-    },
-];
+interface Brief {
+    id: string;
+    title: string;
+    industry_id: string;
+    created_at: string;
+    updated_at: string;
+    status: string;
+}
+
+const industryIcons: Record<string, typeof Magicpen> = {
+    marketing: Magicpen,
+    design: Brush2,
+    video: VideoPlay,
+    content: Edit,
+    events: Calendar,
+    consulting: Briefcase,
+    architecture: Building,
+    pr: Microphone2,
+    legal: Judge,
+    custom: Setting4,
+};
+
+const industryColors: Record<string, string> = {
+    marketing: "#2d68ff",
+    design: "#a444f3",
+    video: "#ff381c",
+    content: "#00a656",
+    events: "#f52495",
+    consulting: "#2d68ff",
+    architecture: "#6366f1",
+    pr: "#f59e0b",
+    legal: "#64748b",
+    custom: "#2d68ff",
+};
+
+const industryNames: Record<string, string> = {
+    marketing: "Marketing & Advertising",
+    design: "Design & Creative",
+    video: "Video Production",
+    content: "Content & SEO",
+    events: "Event Planning",
+    consulting: "Consulting",
+    architecture: "Architecture",
+    pr: "Public Relations",
+    legal: "Legal Services",
+    custom: "Custom",
+};
+
+const industryBgColors: Record<string, string> = {
+    marketing: "bg-primary1/10",
+    design: "bg-accent2/10",
+    video: "bg-primary3/10",
+    content: "bg-primary2/10",
+    events: "bg-accent/10",
+    consulting: "bg-primary1/10",
+    architecture: "bg-[#6366f1]/10",
+    pr: "bg-[#f59e0b]/10",
+    legal: "bg-[#64748b]/10",
+    custom: "bg-primary1/10",
+};
 
 export default function BriefsPage() {
+    const supabase = createClient();
     const [activeIndustry, setActiveIndustry] = useState("all");
     const [sortBy, setSortBy] = useState(sortOptions[0]);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+    const [briefs, setBriefs] = useState<Brief[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadBriefs = async () => {
+            const { data } = await supabase
+                .from("briefs")
+                .select("*")
+                .order("updated_at", { ascending: false });
+
+            if (data) {
+                setBriefs(data);
+            }
+            setIsLoading(false);
+        };
+
+        loadBriefs();
+    }, [supabase]);
+
+    const getTimeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 60) return `${diffMins} minutes ago`;
+        if (diffHours < 24) return `${diffHours} hours ago`;
+        if (diffDays === 1) return "Yesterday";
+        if (diffDays < 7) return `${diffDays} days ago`;
+        return date.toLocaleDateString();
+    };
 
     const filteredBriefs = briefs.filter(
-        (brief) => activeIndustry === "all" || brief.industry === activeIndustry
+        (brief) => activeIndustry === "all" || brief.industry_id === activeIndustry
     );
+
+    // Sort briefs
+    const sortedBriefs = [...filteredBriefs].sort((a, b) => {
+        if (sortBy.id === 0) return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        if (sortBy.id === 1) return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+        if (sortBy.id === 2) return a.title.localeCompare(b.title);
+        return 0;
+    });
 
     return (
         <div className="max-w-6xl mx-auto">
@@ -220,28 +223,34 @@ export default function BriefsPage() {
             </div>
 
             {/* Briefs Grid/List */}
-            {filteredBriefs.length > 0 ? (
+            {isLoading ? (
+                <div className="flex items-center justify-center p-16">
+                    <div className="animate-spin w-8 h-8 border-2 border-primary1 border-t-transparent rounded-full"></div>
+                </div>
+            ) : sortedBriefs.length > 0 ? (
                 viewMode === "grid" ? (
                     <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-md:grid-cols-1">
-                        {filteredBriefs.map((brief) => {
-                            const BriefIcon = brief.Icon;
+                        {sortedBriefs.map((brief) => {
+                            const BriefIcon = industryIcons[brief.industry_id] || DocumentText;
+                            const bgColor = industryBgColors[brief.industry_id] || "bg-primary1/10";
+                            const iconColor = industryColors[brief.industry_id] || "#2d68ff";
                             return (
                                 <Link
                                     key={brief.id}
                                     href={`/dashboard/briefs/${brief.id}`}
                                     className="group p-6 bg-b-surface2 rounded-3xl hover:shadow-hover transition-all"
                                 >
-                                    <div className={`flex items-center justify-center w-12 h-12 mb-4 rounded-2xl ${brief.bgColor}`}>
-                                        <BriefIcon size={24} variant="Bold" color={brief.iconColor} />
+                                    <div className={`flex items-center justify-center w-12 h-12 mb-4 rounded-2xl ${bgColor}`}>
+                                        <BriefIcon size={24} variant="Bold" color={iconColor} />
                                     </div>
                                     <h3 className="text-body-bold mb-1 truncate group-hover:text-primary1 transition-colors">
                                         {brief.title}
                                     </h3>
                                     <p className="text-small text-t-tertiary mb-3">
-                                        {brief.industryName}
+                                        {industryNames[brief.industry_id] || "Brief"}
                                     </p>
                                     <div className="flex items-center justify-between text-small text-t-tertiary">
-                                        <span>Updated {brief.updatedAt}</span>
+                                        <span>Updated {getTimeAgo(brief.updated_at)}</span>
                                     </div>
                                 </Link>
                             );
@@ -249,30 +258,32 @@ export default function BriefsPage() {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        {filteredBriefs.map((brief) => {
-                            const BriefIcon = brief.Icon;
+                        {sortedBriefs.map((brief) => {
+                            const BriefIcon = industryIcons[brief.industry_id] || DocumentText;
+                            const bgColor = industryBgColors[brief.industry_id] || "bg-primary1/10";
+                            const iconColor = industryColors[brief.industry_id] || "#2d68ff";
                             return (
                                 <Link
                                     key={brief.id}
                                     href={`/dashboard/briefs/${brief.id}`}
                                     className="flex items-center gap-4 p-4 bg-b-surface2 rounded-2xl hover:shadow-hover transition-all"
                                 >
-                                    <div className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${brief.bgColor}`}>
-                                        <BriefIcon size={20} variant="Bold" color={brief.iconColor} />
+                                    <div className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${bgColor}`}>
+                                        <BriefIcon size={20} variant="Bold" color={iconColor} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <h3 className="text-body-bold truncate">
                                             {brief.title}
                                         </h3>
                                         <p className="text-small text-t-tertiary">
-                                            {brief.industryName}
+                                            {industryNames[brief.industry_id] || "Brief"}
                                         </p>
                                     </div>
                                     <span className="text-small text-t-tertiary shrink-0 max-md:hidden">
-                                        {brief.createdAt}
+                                        {new Date(brief.created_at).toLocaleDateString()}
                                     </span>
                                     <span className="text-small text-t-tertiary shrink-0">
-                                        {brief.updatedAt}
+                                        {getTimeAgo(brief.updated_at)}
                                     </span>
                                     <ArrowRight2 size={20} color="#8E8E93" className="shrink-0" />
                                 </Link>
