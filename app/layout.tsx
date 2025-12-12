@@ -80,8 +80,9 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <head>
-                <link rel="icon" href="/favicon.ico" sizes="any" />
-                <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+                <link rel="icon" href="/icon.svg" type="image/svg+xml" sizes="any" />
+                <link rel="apple-touch-icon" href="/icon.svg" />
             </head>
             <body
                 className={`${satoshi.variable} bg-b-surface1 font-satoshi text-[1rem] text-t-primary antialiased`}
