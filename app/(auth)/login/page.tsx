@@ -27,6 +27,12 @@ export default function LoginPage() {
         setIsLoading(true);
         setError("");
 
+        if (!supabase) {
+            setError("Authentication service unavailable. Please try again later.");
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const { data, error: signInError } = await supabase.auth.signInWithPassword({
                 email,

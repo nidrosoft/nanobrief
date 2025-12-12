@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { User } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { User, SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -35,14 +35,14 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchProfile = async (userId: string) => {
-        const { data } = await supabase
+    const fetchProfile = async (userId: string, client: SupabaseClient) => {
+        const { data } = await client
             .from("users")
             .select("*")
             .eq("id", userId)
@@ -54,18 +54,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const refreshProfile = async () => {
-        if (user) {
-            await fetchProfile(user.id);
+        if (user && supabase) {
+            await fetchProfile(user.id, supabase);
         }
     };
 
     useEffect(() => {
+        // Skip if Supabase client is not available (build time)
+        if (!supabase) {
+            setIsLoading(false);
+            return;
+        }
+
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);
             
             if (user) {
-                await fetchProfile(user.id);
+                await fetchProfile(user.id, supabase);
             }
             
             setIsLoading(false);
@@ -78,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(session?.user ?? null);
                 
                 if (session?.user) {
-                    await fetchProfile(session.user.id);
+                    await fetchProfile(session.user.id, supabase);
                 } else {
                     setProfile(null);
                 }
@@ -93,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [supabase]);
 
     const signOut = async () => {
+        if (!supabase) return;
         await supabase.auth.signOut();
         setUser(null);
         setProfile(null);
